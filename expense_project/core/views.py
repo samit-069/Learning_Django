@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import Expense
 from django.shortcuts import get_list_or_404
+from django.db.models import Sum
 
 # Create your views here.
 @csrf_exempt
@@ -84,3 +85,15 @@ def expense_detail(request, id):
             return JsonResponse({"error": "Invalid JSON Format"},status=400)
     #Safety Net    
     return JsonResponse({"error": f"Method {request.method} not allowed"}, status=405)
+
+@csrf_exempt
+def expense_total_api(request):
+    #ask db to sum total amount
+    data = Expense.objects.aggregate(Sum('amount'))
+    total_spent = data['amount__sum'] or 0.00
+
+    # Return Sum as JsonResponse
+
+    return JsonResponse({
+        "total_amount_spent": float(total_spent)
+    })

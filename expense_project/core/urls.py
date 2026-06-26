@@ -1,10 +1,11 @@
 from django.urls import path
-from .views import expense_api, expense_detail
+from .views import expense_api, expense_detail, expense_total_api
 
 app_name = "core"
 
 urlpatterns = [
     # Think of this file as standing INSIDE the "/api/expenses/" room already.
-    path('', expense_api),                  # Maps to: /api/expenses/
-    path('<int:id>/', expense_detail),       # Maps to: /api/expenses/<int:id>/
+    path('', expense_api),
+    path('<int:id>/', expense_detail),
+    path('total/', expense_total_api),
 ]
