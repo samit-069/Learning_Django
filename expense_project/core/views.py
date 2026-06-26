@@ -8,6 +8,7 @@ from django.shortcuts import get_list_or_404
 # Create your views here.
 @csrf_exempt
 def expense_api(request):
+    #Handels GET
     if request.method == 'GET':
         expenses = Expense.objects.all() #Fetches all Expenses table from models
 
@@ -23,7 +24,7 @@ def expense_api(request):
 
         return JsonResponse(data, safe=False)
         
-
+    #Handels POST
     elif request.method == 'POST':
 
         #read and decode raw network bytes
@@ -44,13 +45,13 @@ def expense_api(request):
 
 @csrf_exempt
 def expense_detail(request, id):
-    # 1. Find the item or return a clean 404
+    #Find the item or return a clean 404
     try:
         expense = Expense.objects.get(id=id)
     except Expense.DoesNotExist:
         return JsonResponse({"error": "Expense not found!"}, status=404)
 
-    # 2. Handle GET
+    #Handle single item GET
     if request.method == 'GET':
         return JsonResponse({
             "id": expense.id,
@@ -60,11 +61,26 @@ def expense_detail(request, id):
             "date_added": expense.date_added.strftime('%Y-%m-%d %H:%M:%S')
         })
 
-    # 3. Handle DELETE
+    #Handle DELETE
     elif request.method == 'DELETE':
         expense.delete()
         return JsonResponse({"message": "Expense deleted successfully!"}, status=200)
 
-    # 4. SAFETY NET: If someone sends a PUT, PATCH, or anything else, 
-    # return a clean HTTP 405 Method Not Allowed instead of throwing a ValueError crash!
+    elif request.method == 'PUT':
+        try:
+            #converts raw strings into python dictionary
+            data = json.loads(request.body)
+
+            #updates field
+            expense.title = data.get('title', expense.title)
+            expense.amount = data.get('amount', expense.amount)
+            expense.category = data.get('category', expense.category)
+        
+            #parment save
+            expense.save()
+
+            return JsonResponse({"message": "Expense updated sucessfully!!"}, status=200)
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON Format"},status=400)
+    #Safety Net    
     return JsonResponse({"error": f"Method {request.method} not allowed"}, status=405)
