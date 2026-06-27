@@ -97,3 +97,21 @@ def expense_total_api(request):
     return JsonResponse({
         "total_amount_spent": float(total_spent)
     })
+
+@csrf_exempt
+def expense_list_view(request):
+    #fetch all expenses from db
+    expenses = Expense.objects.all()
+
+    #calculate total sum
+    stats = Expense.objects.aggregate(Sum('amount'))
+    total = stats['amount__sum'] or 0.00
+
+    #pack everything and sent to HTML
+    context = {
+        'all_expenses': expenses,
+        'total_spent': total
+    }
+
+    # render the template with data
+    return render(request, 'core/expense_list.html', context)
