@@ -5,6 +5,10 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import Expense
 from django.shortcuts import get_list_or_404
 from django.db.models import Sum
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .serializers import ExpenseSerializer
+from rest_framework import status
 
 # Create your views here.
 @csrf_exempt
@@ -115,3 +119,47 @@ def expense_list_view(request):
 
     # render the template with data
     return render(request, 'core/expense_list.html', context)
+
+@api_view(['GET', 'POST'])
+def expense_list_drf(request):
+    if request.method == 'GET':
+        #fetch data
+        expenses = Expense.objects.all()
+
+        #many=True because it's list
+        serializer = ExpenseSerializer(expenses, many=True)
+
+        return Response(serializer.data)
+    
+    elif request.method == 'POST':
+        serializer = ExpenseSerializer(data = request.data) #feeds user data into translator
+        #automatically handels all data validation
+        if serializer.is_valid():
+            serializer.save() #save directly to database
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+    
+@api_view(['GET', 'PUT', 'DELETE'])
+def expense_detail_drf(request, pk):
+    #404 error if id don't exist
+    try:
+        expense = Expense.objects.get(pk=pk)
+    except Expense.DoesNotExist:
+        return Response({"error": "Expense Not Found"}, status= status.HTTP_404_NOT_FOUND)
+    
+    #Single Item GET
+    if request.method == 'GET':
+        serializer = ExpenseSerializer(expense)
+        return Response(serializer.data)
+    
+    elif request.method == 'PUT':
+        serializer = ExpenseSerializer(data = request.data) #feeds user data into translator
+        #automatically handels all data validation
+        if serializer.is_valid():
+            serializer.save() #save directly to database
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    elif request.method == 'DELETE':
+        expense.delete()
+        return Response({"message": "Expense deleted successfully!"}, status=status.HTTP_204_NO_CONTENT)
