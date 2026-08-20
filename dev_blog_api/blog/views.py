@@ -1,21 +1,23 @@
-from rest_framework import viewsets
 from .models import Post, Comment
 from .serializer import PostSerializer, CommentSerializer, RegistrationSerializer
 from django.contrib.auth.models import User
-from rest_framework import generics, permissions
+from rest_framework import viewsets,generics, permissions
+from .permissions import IsAuthorOrReadOnly
 
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all().order_by('-created_at')
     serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
 
     def perform_create(self, serializer):
-        # Explicitly pass the logged-in user to the serializer on save
+        # Automatically attach the logged-in user as the post author
         serializer.save(author=self.request.user)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all().order_by('-created_at')
     serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
